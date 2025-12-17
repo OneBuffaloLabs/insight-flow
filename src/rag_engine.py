@@ -1,48 +1,50 @@
 import os
+import shutil
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.document_loaders import CSVLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 
-# Load env variables immediately
 load_dotenv()
 
 
 class RAGEngine:
     def __init__(self):
-        # Validation: Check for API Key
+        # Ensure API key is available before initializing components
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError("OPENAI_API_KEY not found. Please check your .env file.")
 
-        # Initialize the LLM
-        # We use 'gpt-3.5-turbo' for cost, 'gpt-4o' is the latest/smartest if you have access
-        self.llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
-
-        # Initialize Embeddings
         self.embeddings = OpenAIEmbeddings()
-
+        self.persist_directory = "./chroma_db"
         self.vector_store = None
 
-    def ingest_file(self, file_path):
+    def ingest_file(self, file_path: str) -> int:
         """
-        1. Load CSV
-        2. Split into chunks
-        3. Embed and store in ChromaDB
+        Process the file: Load -> Split -> Embed -> Store.
+        Returns the number of chunks created.
         """
-        # 1. Load
+        # Clear existing vector store to prevent data pollution between uploads
+        if os.path.exists(self.persist_directory):
+            shutil.rmtree(self.persist_directory)
+
+        # 1. Load Data
         loader = CSVLoader(file_path=file_path)
-        data = loader.load()
+        raw_documents = loader.load()
 
-        # 2. Split
+        # 2. Split Data
+        # Using a 1000/200 split to ensure context is maintained across chunk boundaries
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000, chunk_overlap=100
+            chunk_size=1000, chunk_overlap=200
         )
-        chunks = text_splitter.split_documents(data)
+        chunks = text_splitter.split_documents(raw_documents)
 
-        # 3. Vector Store (Chroma)
-        # using a local persistence directory so data survives a restart
+        # 3. Embed & Store
+        # Chroma handles the embedding calls implicitly via the passed embedding function
         self.vector_store = Chroma.from_documents(
-            documents=chunks, embedding=self.embeddings, persist_directory="./chroma_db"
+            documents=chunks,
+            embedding=self.embeddings,
+            persist_directory=self.persist_directory,
         )
-        return True
+
+        return len(chunks)

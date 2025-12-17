@@ -211,3 +211,5 @@ __marimo__/
 
 # Exception: Allow the sample data to be committed
 !data/test_data.csv
+
+chroma_db/
