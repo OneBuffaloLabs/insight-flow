@@ -1,0 +1,35 @@
+name: CI Pipeline
+
+# Trigger on push to main or any pull request
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Python (Simulates your local environment)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      # 3. Install Dependencies (Uses your Makefile)
+      - name: Install dependencies
+        run: make install
+
+      # 4. Run Linter (Fail fast on style errors)
+      - name: Lint Code
+        run: make lint
+
+      # 5. Run Tests (Placeholder - we will add tests later)
+      # - name: Run Tests
+      #   run: make test

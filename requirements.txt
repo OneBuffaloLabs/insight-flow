@@ -6,3 +6,4 @@ chromadb
 python-dotenv
 pandas
 tiktoken
+ruff
