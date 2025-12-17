@@ -8,6 +8,7 @@ from langchain_community.vectorstores import Chroma
 # Load env variables immediately
 load_dotenv()
 
+
 class RAGEngine:
     def __init__(self):
         # Validation: Check for API Key
@@ -16,10 +17,7 @@ class RAGEngine:
 
         # Initialize the LLM
         # We use 'gpt-3.5-turbo' for cost, 'gpt-4o' is the latest/smartest if you have access
-        self.llm = ChatOpenAI(
-            model="gpt-3.5-turbo",
-            temperature=0.2
-        )
+        self.llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
 
         # Initialize Embeddings
         self.embeddings = OpenAIEmbeddings()
@@ -38,16 +36,13 @@ class RAGEngine:
 
         # 2. Split
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=100
+            chunk_size=1000, chunk_overlap=100
         )
         chunks = text_splitter.split_documents(data)
 
         # 3. Vector Store (Chroma)
         # using a local persistence directory so data survives a restart
         self.vector_store = Chroma.from_documents(
-            documents=chunks,
-            embedding=self.embeddings,
-            persist_directory="./chroma_db"
+            documents=chunks, embedding=self.embeddings, persist_directory="./chroma_db"
         )
         return True

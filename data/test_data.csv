@@ -1,0 +1,6 @@
+ticket_id,date,category,issue_description,priority
+101,2023-10-01,Login,User cannot reset password via email link. The link expires immediately.,High
+102,2023-10-01,Billing,Customer was charged twice for the October subscription. Requesting refund.,Medium
+103,2023-10-02,UI/UX,The 'Submit' button on the profile page is misaligned on mobile screens.,Low
+104,2023-10-02,Performance,Dashboard takes over 15 seconds to load when filtering by date range.,High
+105,2023-10-03,Login,User is stuck in a redirect loop after 2FA verification.,Critical

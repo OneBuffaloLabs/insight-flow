@@ -29,7 +29,6 @@ install:
 	python3 -m venv $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
-	$(PIP) install ruff
 	@echo "Dependencies installed successfully."
 
 # Run the app (using the venv's streamlit binary directly)
