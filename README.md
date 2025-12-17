@@ -12,7 +12,7 @@
 
 **Insight Flow** is an interactive analysis engine designed to bridge the gap between structured data and natural language. It utilizes **Retrieval-Augmented Generation (RAG)** to allow users to chat with their data.
 
-Built for **One Buffalo Labs**, this project demonstrates how to ingest CSV or SQLite data, chunk it into vector embeddings using **ChromaDB**, and retrieve context-aware answers using **LangChain** and **OpenAI**.
+Built for **One Buffalo Labs**, this project demonstrates how to ingest CSV or SQLite data, chunk it into vector embeddings using **ChromaDB**, and retrieve context-aware answers using **LangChain** and **OpenAI**. Unlike standard chatbots, Insight Flow strictly adheres to the provided data and offers **source citations** for transparency.
 
 ## 🛠 Tech Stack
 
@@ -78,9 +78,19 @@ make run
 
 ```
 
-## ⚡ Features & Usage
+## ⚡ Features & Capabilities
 
-1. **Data Ingestion:** Automatically loads CSV files from the `data/` directory or connects to SQLite databases. 2. **Vector Embedding:** Converts text data into high-dimensional vectors for semantic search. 3. **Context Retrieval:** Finds the most relevant data rows based on your natural language query. 4. **Generative Response:** Synthesizes the retrieved data into a clear, human-readable answer.
+### 🔍 Core Functionality
+
+- **Data Ingestion:** Automatically loads CSV files from the `data/` directory or file uploader.
+- **Vector Embedding:** Converts text data into high-dimensional vectors for semantic search.
+- **Context Retrieval:** Finds the most relevant data rows based on your natural language query.
+
+### 🛡️ Senior Analyst Features
+
+- **Source Transparency:** Every answer includes a "View Source Data" dropdown, displaying the exact raw data rows used to generate the response.
+- **Strict Persona:** The engine is prompted as a "Senior Data Analyst" and will explicitly state "I don't know" if the answer is not found in the source data, preventing hallucinations.
+- **Adjustable Temperature:** A sidebar slider allows you to tune the model's creativity (0.0 for precise reporting, 1.0 for creative brainstorming).
 
 ## ⚙️ Developer Command Reference
 
@@ -95,11 +105,11 @@ We use `make` to abstract common development tasks.
 | `make format`  | Auto-format code using `ruff`.                               |
 | `make fix`     | Auto-fix linting errors.                                     |
 
-##📂 Project Structure
+## 📂 Project Structure
 
 ```text
 /
-├── app.py # Main application entry point (UI)
+├── app.py # Main application entry point (UI & Session State)
 ├── src/
 │ └── rag_engine.py # RAG logic, Vector setup, and QA Chains
 ├── data/ # Place CSV/SQLite files here
@@ -118,6 +128,9 @@ make lint
 
 # Auto-format code
 make format
+
+# Auto-fix linting errors
+make fix
 ```
 
 ---

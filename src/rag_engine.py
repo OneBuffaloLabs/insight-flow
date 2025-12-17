@@ -9,13 +9,12 @@ from langchain.prompts import PromptTemplate
 
 load_dotenv()
 
+
 class RAGEngine:
     def __init__(self, temp=0):
         # 1. Initialize OpenAI with dynamic temperature
         self.llm = ChatOpenAI(
-            model="gpt-3.5-turbo",
-            temperature=temp,
-            api_key=os.getenv("OPENAI_API_KEY")
+            model="gpt-3.5-turbo", temperature=temp, api_key=os.getenv("OPENAI_API_KEY")
         )
         self.vector_store = None
         self.retriever = None
@@ -25,7 +24,9 @@ class RAGEngine:
         loader = CSVLoader(file_path=file_path)
         documents = loader.load()
 
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=200
+        )
         chunks = text_splitter.split_documents(documents)
 
         embeddings = OpenAIEmbeddings()
@@ -51,8 +52,8 @@ class RAGEngine:
         self.qa_chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             retriever=self.retriever,
-            return_source_documents=True, # <--- Crucial for transparency
-            chain_type_kwargs={"prompt": QA_CHAIN_PROMPT}
+            return_source_documents=True,  # <--- Crucial for transparency
+            chain_type_kwargs={"prompt": QA_CHAIN_PROMPT},
         )
 
     def query(self, query_text):

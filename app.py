@@ -13,7 +13,14 @@ with st.sidebar:
     st.header("⚙️ Configuration")
 
     # 1. Temperature Slider (Creativity Control)
-    temperature = st.slider("Model Temperature", min_value=0.0, max_value=1.0, value=0.0, step=0.1, help="0 = Precise, 1 = Creative")
+    temperature = st.slider(
+        "Model Temperature",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.0,
+        step=0.1,
+        help="0 = Precise, 1 = Creative",
+    )
 
     # 2. Clear Chat Button
     if st.button("Clear Chat History", type="primary"):
@@ -33,7 +40,7 @@ if "rag_engine" not in st.session_state:
 
 # Re-initialize engine if temperature changes (Optional optimization: only re-init LLM)
 if st.session_state.rag_engine.llm.temperature != temperature:
-     st.session_state.rag_engine = RAGEngine(temp=temperature)
+    st.session_state.rag_engine = RAGEngine(temp=temperature)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -50,7 +57,10 @@ if uploaded_file:
         tmp_path = tmp_file.name
 
     # Ingest only if not already ingested (simple check)
-    if "current_file" not in st.session_state or st.session_state.current_file != uploaded_file.name:
+    if (
+        "current_file" not in st.session_state
+        or st.session_state.current_file != uploaded_file.name
+    ):
         with st.spinner("Processing data..."):
             st.session_state.rag_engine.ingest_file(tmp_path)
             st.session_state.current_file = uploaded_file.name
@@ -95,8 +105,6 @@ if prompt := st.chat_input("Ask a question about your data..."):
                         st.code(doc.page_content, language="csv")
 
     # Save context and sources to history
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": answer,
-        "sources": sources
-    })
+    st.session_state.messages.append(
+        {"role": "assistant", "content": answer, "sources": sources}
+    )
