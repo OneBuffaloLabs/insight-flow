@@ -1,86 +1,63 @@
 import os
-import shutil
 from dotenv import load_dotenv
 from langchain_community.document_loaders import CSVLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import Chroma
 from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
 
 load_dotenv()
 
-
 class RAGEngine:
-    def __init__(self):
-        if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY not found. Please check your .env file.")
-
-        # Initialize core components
-        self.embeddings = OpenAIEmbeddings()
-        # Temperature 0 ensures factual consistency for data analysis
-        self.llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-
-        self.persist_directory = "./chroma_db"
+    def __init__(self, temp=0):
+        # 1. Initialize OpenAI with dynamic temperature
+        self.llm = ChatOpenAI(
+            model="gpt-3.5-turbo",
+            temperature=temp,
+            api_key=os.getenv("OPENAI_API_KEY")
+        )
         self.vector_store = None
+        self.retriever = None
         self.qa_chain = None
 
-    def ingest_file(self, file_path: str) -> int:
-        """
-        Full ingestion pipeline: Load CSV -> Split -> Embed -> Store -> Init Chain
-        """
-        # Clear previous database to ensure clean query context
-        if os.path.exists(self.persist_directory):
-            shutil.rmtree(self.persist_directory)
-
+    def ingest_file(self, file_path):
         loader = CSVLoader(file_path=file_path)
-        raw_documents = loader.load()
+        documents = loader.load()
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000, chunk_overlap=200
-        )
-        chunks = text_splitter.split_documents(raw_documents)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        chunks = text_splitter.split_documents(documents)
 
-        self.vector_store = Chroma.from_documents(
-            documents=chunks,
-            embedding=self.embeddings,
-            persist_directory=self.persist_directory,
-        )
+        embeddings = OpenAIEmbeddings()
+        self.vector_store = Chroma.from_documents(chunks, embeddings)
+        self.retriever = self.vector_store.as_retriever()
 
-        # Re-initialize the retrieval chain with the new data
-        self._initialize_chain()
+        # 2. Define the "Senior" System Prompt
+        template = """
+        You are a Senior Data Analyst for One Buffalo Labs.
+        Your goal is to answer questions based ONLY on the provided context below.
+        If the answer cannot be found in the context, strictly state "I don't know" without making up information.
 
-        return len(chunks)
+        Context: {context}
 
-    def _initialize_chain(self):
-        """Builds the RetrievalQA chain using the current vector store."""
-        if not self.vector_store:
-            return
+        Question: {question}
 
-        # Configure retriever to fetch the top 3 most relevant chunks
-        retriever = self.vector_store.as_retriever(
-            search_type="similarity", search_kwargs={"k": 3}
-        )
+        Helpful Answer:
+        """
 
-        # "Stuff" chain combines the retrieved chunks into the prompt context
+        QA_CHAIN_PROMPT = PromptTemplate.from_template(template)
+
+        # 3. Create Chain with Source Return enabled
         self.qa_chain = RetrievalQA.from_chain_type(
-            llm=self.llm, chain_type="stuff", retriever=retriever
+            llm=self.llm,
+            retriever=self.retriever,
+            return_source_documents=True, # <--- Crucial for transparency
+            chain_type_kwargs={"prompt": QA_CHAIN_PROMPT}
         )
 
-    def query(self, question: str) -> str:
-        """
-        Executes the RAG pipeline:
-        Question -> Vector Search -> Context + Question -> LLM -> Answer
-        """
+    def query(self, query_text):
         if not self.qa_chain:
-            # Handle restart scenarios where DB exists but object is new
-            if os.path.exists(self.persist_directory):
-                self.vector_store = Chroma(
-                    persist_directory=self.persist_directory,
-                    embedding_function=self.embeddings,
-                )
-                self._initialize_chain()
-            else:
-                return "Please upload a data file first."
+            return {"result": "Please upload a document first.", "source_documents": []}
 
-        response = self.qa_chain.invoke({"query": question})
-        return response["result"]
+        # The chain now returns a dictionary {result: ..., source_documents: ...}
+        return self.qa_chain.invoke({"query": query_text})
