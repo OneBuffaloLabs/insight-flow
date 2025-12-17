@@ -73,10 +73,19 @@ for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input("Ask a question about your data..."):
+    # 1. Display User Message
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
-    # Response placeholder - Retrieval logic goes here in the next step
-    response = "Vector Store Active. Ready for retrieval logic."
+    # 2. Generate Assistant Response
+    with st.chat_message("assistant"):
+        with st.spinner("Analyzing context..."):
+            try:
+                response = st.session_state.rag_engine.query(prompt)
+                st.write(response)
+            except Exception as e:
+                response = f"An error occurred: {e}"
+                st.error(response)
+
+    # 3. Append to History
     st.session_state.messages.append({"role": "assistant", "content": response})
-    st.chat_message("assistant").write(response)
